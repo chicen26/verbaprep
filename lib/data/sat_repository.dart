@@ -17,16 +17,36 @@ class SatRepository {
   SatRepository(this._db);
   final SupabaseClient _db;
 
-  /// All verified questions, optionally filtered to one skill. Shared bank rows
-  /// (owner_id is null) plus the user's own vocab-derived items are visible.
-  Future<List<SatQuestion>> fetchPool({String? skillCode}) async {
-    final base = _db.from('sat_questions').select().eq('verified', true);
-    final rows = (skillCode == null
-        ? await base
-        : await base.eq('skill_code', skillCode)) as List<dynamic>;
+  /// Verified questions, optionally filtered to a set of skills and/or a grammar
+  /// rule. Shared bank rows (owner_id null) + the user's vocab-derived items.
+  Future<List<SatQuestion>> fetchPool({
+    List<String>? skillCodes,
+    String? ruleCode,
+  }) async {
+    var q = _db.from('sat_questions').select().eq('verified', true);
+    if (skillCodes != null && skillCodes.isNotEmpty) {
+      q = q.inFilter('skill_code', skillCodes);
+    }
+    if (ruleCode != null) q = q.eq('rule_code', ruleCode);
+    final rows = await q as List<dynamic>;
     return rows
         .map((r) => SatQuestion.fromJson(r as Map<String, dynamic>))
         .toList();
+  }
+
+  /// Distinct grammar rule codes present in the bank (for the drills screen).
+  Future<List<String>> distinctRules() async {
+    final rows = await _db
+        .from('sat_questions')
+        .select('rule_code')
+        .not('rule_code', 'is', null) as List<dynamic>;
+    final set = <String>{};
+    for (final r in rows) {
+      final v = r['rule_code'] as String?;
+      if (v != null) set.add(v);
+    }
+    final list = set.toList()..sort();
+    return list;
   }
 
   /// Current Elo rating per skill (defaults applied for skills never practiced).
@@ -84,6 +104,34 @@ class SatRepository {
     });
 
     return newRating;
+  }
+}
+
+/// One answered question within a mock.
+class MockAnswer {
+  final SatQuestion q;
+  final int chosen;
+  final int moduleNo;
+  MockAnswer(this.q, this.chosen, this.moduleNo);
+  bool get correct => chosen == q.answer;
+}
+
+extension MockRecording on SatRepository {
+  /// Batch-insert all answers from a full mock sitting (one round-trip).
+  Future<void> recordMockAttempts(String mockId, List<MockAnswer> answers) async {
+    final userId = _db.auth.currentUser!.id;
+    final rows = answers
+        .map((a) => {
+              'user_id': userId,
+              'question_id': a.q.id,
+              'chosen': a.chosen,
+              'correct': a.correct,
+              'module_no': a.moduleNo,
+              'mock_id': mockId,
+            })
+        .toList();
+    if (rows.isEmpty) return;
+    await _db.from('sat_attempts').insert(rows);
   }
 }
 

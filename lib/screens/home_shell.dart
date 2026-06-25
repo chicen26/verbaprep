@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'dashboard_screen.dart';
 import 'sat_home_screen.dart';
 import 'word_list_screen.dart';
 
@@ -14,7 +15,7 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  static const _tabs = [WordListScreen(), SatHomeScreen()];
+  static const _tabs = [WordListScreen(), SatHomeScreen(), DashboardScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +33,10 @@ class _HomeShellState extends State<HomeShell> {
               icon: Icon(Icons.school_outlined),
               selectedIcon: Icon(Icons.school),
               label: 'SAT'),
+          NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights),
+              label: 'Progress'),
         ],
       ),
     );

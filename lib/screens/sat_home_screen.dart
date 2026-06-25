@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/sat_repository.dart';
 import '../models/sat_question.dart';
+import 'grammar_drills_screen.dart';
+import 'mock_screen.dart';
 import 'sat_practice_screen.dart';
+import 'vocab_wic_screen.dart';
 
 /// SAT Reading & Writing home: estimated level + per-skill mastery, grouped by
 /// domain, each a tap into adaptive practice.
@@ -26,6 +29,54 @@ class SatHomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 _MixedCard(onTap: () => _practice(context, ref, null)),
+                const SizedBox(height: 12),
+                GridView.count(
+                  crossAxisCount: 2,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                  childAspectRatio: 2.4,
+                  children: [
+                    _ActionTile(
+                      icon: Icons.today,
+                      label: 'Daily set (10)',
+                      onTap: () => _push(
+                          context,
+                          ref,
+                          const SatPracticeScreen(
+                              limit: 10, title: 'Daily set')),
+                    ),
+                    _ActionTile(
+                      icon: Icons.timer,
+                      label: 'Full mock',
+                      onTap: () => _push(context, ref, const MockScreen()),
+                    ),
+                    _ActionTile(
+                      icon: Icons.trending_down,
+                      label: 'Weak skills',
+                      onTap: () => _push(
+                          context,
+                          ref,
+                          SatPracticeScreen(
+                            skillCodes: _weakest(mastery),
+                            title: 'Weak-skills focus',
+                          )),
+                    ),
+                    _ActionTile(
+                      icon: Icons.spellcheck,
+                      label: 'Grammar drills',
+                      onTap: () =>
+                          _push(context, ref, const GrammarDrillsScreen()),
+                    ),
+                    _ActionTile(
+                      icon: Icons.menu_book,
+                      label: 'Practice your words',
+                      onTap: () =>
+                          _push(context, ref, const VocabWicScreen()),
+                    ),
+                  ],
+                ),
                 const SizedBox(height: 20),
                 for (final domain in satDomains) ...[
                   Text(domain,
@@ -57,6 +108,53 @@ class SatHomeScreen extends ConsumerWidget {
       builder: (_) => SatPracticeScreen(skillCode: skillCode),
     ));
     ref.invalidate(satMasteryProvider); // refresh ratings after practicing
+  }
+
+  Future<void> _push(BuildContext context, WidgetRef ref, Widget screen) async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+    ref.invalidate(satMasteryProvider);
+  }
+
+  /// The 3 lowest-rated practiced skills; falls back to all skills if none yet.
+  List<String> _weakest(Map<String, double> mastery) {
+    if (mastery.isEmpty) return satSkills.map((s) => s.code).toList();
+    final entries = mastery.entries.toList()
+      ..sort((a, b) => a.value.compareTo(b.value));
+    return entries.take(3).map((e) => e.key).toList();
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile(
+      {required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Icon(icon, size: 22, color: scheme.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(label,
+                    style: const TextStyle(fontWeight: FontWeight.w600)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

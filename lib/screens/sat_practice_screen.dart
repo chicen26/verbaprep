@@ -6,10 +6,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/sat_repository.dart';
 import '../models/sat_question.dart';
 
-/// Adaptive practice over one skill (or mixed if skillCode is null).
+/// Adaptive practice. Defaults to mixed across all skills; can be scoped to one
+/// skill, a set of skills (e.g. weakest), or a single grammar rule, and capped
+/// to [limit] questions (e.g. a daily set).
 class SatPracticeScreen extends ConsumerStatefulWidget {
-  const SatPracticeScreen({super.key, this.skillCode});
+  const SatPracticeScreen({
+    super.key,
+    this.skillCode,
+    this.skillCodes,
+    this.ruleCode,
+    this.limit,
+    this.title,
+  });
   final String? skillCode;
+  final List<String>? skillCodes;
+  final String? ruleCode;
+  final int? limit;
+  final String? title;
 
   @override
   ConsumerState<SatPracticeScreen> createState() => _SatPracticeScreenState();
@@ -36,7 +49,10 @@ class _SatPracticeScreenState extends ConsumerState<SatPracticeScreen> {
   Future<void> _load() async {
     try {
       final repo = ref.read(satRepositoryProvider);
-      final pool = await repo.fetchPool(skillCode: widget.skillCode);
+      final codes = widget.skillCodes ??
+          (widget.skillCode != null ? [widget.skillCode!] : null);
+      final pool =
+          await repo.fetchPool(skillCodes: codes, ruleCode: widget.ruleCode);
       final mastery = await repo.fetchMastery();
       _rating = widget.skillCode != null
           ? (mastery[widget.skillCode] ?? kStartRating)
@@ -57,6 +73,11 @@ class _SatPracticeScreenState extends ConsumerState<SatPracticeScreen> {
   }
 
   void _next() {
+    // Stop after the requested number of questions (e.g. a daily set).
+    if (widget.limit != null && _answered >= widget.limit!) {
+      setState(() => _current = null);
+      return;
+    }
     final q = pickAdaptive(
         pool: _pool ?? [], rating: _rating, seen: _seen, rng: _rng);
     setState(() {
@@ -80,9 +101,10 @@ class _SatPracticeScreenState extends ConsumerState<SatPracticeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.skillCode == null
-        ? 'Mixed practice'
-        : skillByCode(widget.skillCode!).name;
+    final title = widget.title ??
+        (widget.skillCode == null
+            ? 'Mixed practice'
+            : skillByCode(widget.skillCode!).name);
 
     return Scaffold(
       appBar: AppBar(

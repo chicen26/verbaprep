@@ -68,6 +68,23 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
+  /// Instant access with no account (Supabase anonymous sign-in).
+  Future<void> _guest() async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      await Supabase.instance.client.auth.signInAnonymously();
+    } on AuthException catch (e) {
+      setState(() => _message = e.message);
+    } catch (e) {
+      setState(() => _message = 'Something went wrong: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,6 +162,23 @@ class _AuthScreenState extends State<AuthScreen> {
                   child: Text(_isSignUp
                       ? 'Have an account? Sign in'
                       : 'New here? Create an account'),
+                ),
+                const SizedBox(height: 4),
+                Row(children: const [
+                  Expanded(child: Divider()),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Text('or'),
+                  ),
+                  Expanded(child: Divider()),
+                ]),
+                const SizedBox(height: 4),
+                OutlinedButton(
+                  onPressed: _busy ? null : _guest,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                  ),
+                  child: const Text('Continue as guest'),
                 ),
                 if (_message != null) ...[
                   const SizedBox(height: 8),

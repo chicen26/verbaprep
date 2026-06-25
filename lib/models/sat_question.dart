@@ -8,6 +8,7 @@ class SatQuestion {
   final String passage;
   final String? passage2; // Cross-Text only
   final String stimulusKind; // 'passage' | 'notes' | 'graph'
+  final Map<String, dynamic>? graphic; // table data for Quantitative Evidence
   final String stem;
   final List<String> choices;
   final int answer;
@@ -21,6 +22,7 @@ class SatQuestion {
     required this.passage,
     this.passage2,
     this.stimulusKind = 'passage',
+    this.graphic,
     required this.stem,
     required this.choices,
     required this.answer,
@@ -35,6 +37,7 @@ class SatQuestion {
         passage: j['passage'] as String,
         passage2: j['passage2'] as String?,
         stimulusKind: j['stimulus_kind'] as String? ?? 'passage',
+        graphic: j['graphic'] as Map<String, dynamic>?,
         stem: j['stem'] as String,
         choices: (j['choices'] as List).cast<String>(),
         answer: j['answer'] as int,

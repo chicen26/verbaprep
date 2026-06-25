@@ -131,6 +131,10 @@ class _SatPracticeScreenState extends ConsumerState<SatPracticeScreen> {
           _PassageBlock(
               label: q.stimulusKind == 'notes' ? 'Notes' : null,
               text: q.passage),
+        if (q.graphic != null) ...[
+          const SizedBox(height: 12),
+          _GraphicTable(q.graphic!),
+        ],
         const SizedBox(height: 16),
         Text(q.stem,
             style: theme.textTheme.titleMedium
@@ -269,6 +273,64 @@ class _PassageBlock extends StatelessWidget {
             const SizedBox(height: 6),
           ],
           Text(text, style: const TextStyle(height: 1.4)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders a simple data table for Quantitative Evidence questions.
+/// Expects graphic = {title, columns:[...], rows:[[...],[...]]}.
+class _GraphicTable extends StatelessWidget {
+  const _GraphicTable(this.graphic);
+  final Map<String, dynamic> graphic;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = graphic['title'] as String?;
+    final columns = (graphic['columns'] as List?)?.cast<dynamic>() ?? const [];
+    final rows = (graphic['rows'] as List?)?.cast<dynamic>() ?? const [];
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: scheme.outlineVariant),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null) ...[
+            Text(title,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+          ],
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columnSpacing: 24,
+              headingRowHeight: 36,
+              dataRowMinHeight: 32,
+              dataRowMaxHeight: 40,
+              columns: [
+                for (final c in columns)
+                  DataColumn(
+                      label: Text('$c',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600))),
+              ],
+              rows: [
+                for (final r in rows)
+                  DataRow(
+                      cells: [
+                        for (final cell in (r as List))
+                          DataCell(Text('$cell')),
+                      ]),
+              ],
+            ),
+          ),
         ],
       ),
     );

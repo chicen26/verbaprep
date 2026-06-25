@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/legacy.dart'; // StateProvider (Riverpod 3.x)
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/word.dart';
+import 'dictionary.dart';
 import 'srs.dart';
 
 /// Reads/writes the signed-in user's `words` rows. RLS guarantees a user only
@@ -24,11 +25,22 @@ class WordsRepository {
     String? example,
     String? context,
     String? sourceApp,
+    bool enrich = true,
   }) async {
     final userId = _db.auth.currentUser!.id;
+    final clean = word.trim().toLowerCase();
+
+    // Auto-fill any missing fields from the dictionary (best-effort).
+    if (enrich && (definition == null || partOfSpeech == null || example == null)) {
+      final e = await Dictionary.lookup(clean);
+      definition ??= e.definition;
+      partOfSpeech ??= e.partOfSpeech;
+      example ??= e.example;
+    }
+
     await _db.from('words').upsert({
       'user_id': userId,
-      'word': word.trim().toLowerCase(),
+      'word': clean,
       if (definition != null) 'definition': definition,
       if (partOfSpeech != null) 'part_of_speech': partOfSpeech,
       if (example != null) 'example': example,

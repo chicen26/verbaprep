@@ -137,11 +137,17 @@ class WordListScreen extends ConsumerWidget {
       ),
     );
     if (ok == true && wordCtrl.text.trim().isNotEmpty) {
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.showSnackBar(SnackBar(
+        duration: const Duration(seconds: 8),
+        content: Text('Adding “${wordCtrl.text.trim()}” and looking it up…'),
+      ));
       await ref.read(wordsRepositoryProvider).add(
             word: wordCtrl.text,
             definition: defCtrl.text.trim().isEmpty ? null : defCtrl.text.trim(),
           );
       ref.invalidate(wordsProvider);
+      messenger.hideCurrentSnackBar();
     }
   }
 }

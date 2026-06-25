@@ -1,0 +1,135 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../data/sat_repository.dart';
+import '../models/sat_question.dart';
+import 'sat_practice_screen.dart';
+
+/// SAT Reading & Writing home: estimated level + per-skill mastery, grouped by
+/// domain, each a tap into adaptive practice.
+class SatHomeScreen extends ConsumerWidget {
+  const SatHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final masteryAsync = ref.watch(satMasteryProvider);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('SAT Reading & Writing')),
+      body: masteryAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (mastery) {
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(satMasteryProvider),
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _MixedCard(onTap: () => _practice(context, ref, null)),
+                const SizedBox(height: 20),
+                for (final domain in satDomains) ...[
+                  Text(domain,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  for (final skill
+                      in satSkills.where((s) => s.domain == domain))
+                    _SkillRow(
+                      skill: skill,
+                      rating: mastery[skill.code],
+                      onTap: () => _practice(context, ref, skill.code),
+                    ),
+                  const SizedBox(height: 16),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _practice(
+      BuildContext context, WidgetRef ref, String? skillCode) async {
+    await Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SatPracticeScreen(skillCode: skillCode),
+    ));
+    ref.invalidate(satMasteryProvider); // refresh ratings after practicing
+  }
+}
+
+class _MixedCard extends StatelessWidget {
+  const _MixedCard({required this.onTap});
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      color: scheme.primaryContainer,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            children: [
+              Icon(Icons.shuffle, color: scheme.onPrimaryContainer, size: 32),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Mixed adaptive practice',
+                        style: TextStyle(
+                            color: scheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
+                    Text('Questions across all skills, tuned to your level',
+                        style: TextStyle(color: scheme.onPrimaryContainer)),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: scheme.onPrimaryContainer),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SkillRow extends StatelessWidget {
+  const _SkillRow(
+      {required this.skill, required this.rating, required this.onTap});
+  final SatSkill skill;
+  final double? rating;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    // Map Elo (~1000–1800) to a 0–1 progress bar for a rough mastery sense.
+    final r = rating ?? kStartRating;
+    final progress = ((r - 1000) / 800).clamp(0.0, 1.0);
+    final practiced = rating != null;
+
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+      title: Text(skill.name),
+      subtitle: Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: LinearProgressIndicator(
+          value: progress,
+          minHeight: 6,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ),
+      trailing: Text(
+        practiced ? r.round().toString() : '—',
+        style: Theme.of(context).textTheme.labelLarge,
+      ),
+      onTap: onTap,
+    );
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "verbaprep-coach",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Daily SAT Reading & Writing question generator for VerbaPrep",
+  "scripts": {
+    "start": "node generate.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0"
+  }
+}

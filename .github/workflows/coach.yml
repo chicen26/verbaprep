@@ -1,0 +1,29 @@
+name: SAT question coach
+
+# Generates verified SAT R&W questions daily and inserts them into the
+# Supabase bank. Requires three repo secrets (Settings → Secrets and variables
+# → Actions): ANTHROPIC_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY.
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # 14:00 UTC = 7am PT
+  workflow_dispatch: {}     # lets you run it manually from the Actions tab
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deps
+        working-directory: coach
+        run: npm install
+      - name: Generate questions
+        working-directory: coach
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: node generate.mjs

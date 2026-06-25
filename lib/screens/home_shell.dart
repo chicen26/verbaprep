@@ -1,22 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/capture.dart';
+import '../data/words_repository.dart';
 import '../widgets/guest_banner.dart';
 import 'dashboard_screen.dart';
 import 'sat_home_screen.dart';
 import 'word_list_screen.dart';
 
-/// Signed-in shell with bottom navigation between Words and SAT practice.
-class HomeShell extends StatefulWidget {
+/// Signed-in shell with bottom navigation. Also processes a word "sent" to the
+/// app via a share target / shortcut / link (see data/capture.dart).
+class HomeShell extends ConsumerStatefulWidget {
   const HomeShell({super.key});
 
   @override
-  State<HomeShell> createState() => _HomeShellState();
+  ConsumerState<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends ConsumerState<HomeShell> {
   int _index = 0;
 
   static const _tabs = [WordListScreen(), SatHomeScreen(), DashboardScreen()];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _handleCapture());
+  }
+
+  /// If the app was opened with a word in the URL, save it (idempotent upsert).
+  Future<void> _handleCapture() async {
+    final raw = pendingCapture();
+    if (raw == null) return;
+    final shown = raw.split(RegExp(r'\s+')).first;
+    try {
+      await ref
+          .read(wordsRepositoryProvider)
+          .add(word: raw, sourceApp: 'share');
+      ref.invalidate(wordsProvider);
+      ref.invalidate(dueWordsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Saved “$shown” to your words')),
+        );
+      }
+    } catch (_) {/* ignore — keep the app usable */}
+  }
 
   @override
   Widget build(BuildContext context) {

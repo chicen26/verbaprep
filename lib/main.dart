@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'config.dart';
+import 'theme.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_shell.dart';
 
@@ -27,10 +28,7 @@ class VerbaPrepApp extends StatelessWidget {
     return MaterialApp(
       title: 'VerbaPrep',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF3D5AFE),
-        useMaterial3: true,
-      ),
+      theme: Brand.light(),
       home: Config.isConfigured ? const _Root() : const _ConfigNeeded(),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/guest_banner.dart';
 import 'dashboard_screen.dart';
 import 'sat_home_screen.dart';
 import 'word_list_screen.dart';
@@ -20,7 +21,15 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _index, children: _tabs),
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const GuestBanner(),
+            Expanded(child: IndexedStack(index: _index, children: _tabs)),
+          ],
+        ),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),

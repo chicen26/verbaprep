@@ -1,0 +1,40 @@
+{
+    "name": "VerbaPrep",
+    "short_name": "VerbaPrep",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#4F46E5",
+    "theme_color": "#4F46E5",
+    "description": "Capture words and master SAT Reading & Writing.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "share_target": {
+        "action": ".",
+        "method": "GET",
+        "params": { "title": "title", "text": "text", "url": "url" }
+    },
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
